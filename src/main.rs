@@ -1,35 +1,41 @@
-use hexadoku::HexPuzzle;
+use hexadoku::{HexPuzzle, Possible};
 use std::env;
 use std::path::PathBuf;
 use std::process;
 use std::time::Instant;
 
-fn solve(puzzle: &HexPuzzle) -> Option<HexPuzzle> {
-    // find the cell with the least number of possibles
-    match puzzle.get_best() {
-        // No cells left, puzzle solved
-        None => return Some(puzzle.clone()),
-        Some(possible) => {
-            if possible.vals.len() == 0 {
-                // there is a cell with no possible right answers
-                // therefore, we need to backtrack
-                return None;
-            }
+enum State {
+    Backtrack,
+    Iterate((HexPuzzle, Possible)),
+    Search(HexPuzzle),
+}
 
-            for val in possible.vals {
-                let mut puzzle = puzzle.clone();
-                puzzle.set(possible.row, possible.col, val);
-                match solve(&puzzle) {
-                    None => (),
-                    Some(puzzle) => {
-                        let puzzle = puzzle.clone();
-                        return Some(puzzle);
-                    }
+fn solve(puzzle: &HexPuzzle) -> Option<HexPuzzle> {
+    let mut stack: Vec<(HexPuzzle, Possible)> = vec![];
+    let mut state = State::Search(puzzle.clone());
+
+    loop {
+        state = match state {
+            State::Search(puzzle) => match puzzle.get_best() {
+                None => return Some(puzzle.clone()),
+                Some(possible) => State::Iterate((puzzle, possible)),
+            },
+            State::Iterate((mut puzzle, mut possible)) => match possible.vals.pop() {
+                None => State::Backtrack,
+                Some(val) => {
+                    stack.push((puzzle.clone(), possible.clone()));
+                    puzzle.set(possible.row, possible.col, val);
+                    State::Search(puzzle)
+                }
+            },
+            State::Backtrack => {
+                match stack.pop() {
+                    None => return None, // unsolveable
+                    Some((puzzle, possible)) => State::Iterate((puzzle, possible)),
                 }
             }
-        }
+        };
     }
-    None
 }
 
 fn main() {
