@@ -156,7 +156,7 @@ impl HexPuzzle {
 
 impl fmt::Display for HexPuzzle {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        writeln!(f, " {}", "-".repeat(41))?;
+        writeln!(f, " {}", "┌─────────┬─────────┬─────────┬─────────┐")?;
         for row in 0..16 {
             for col in 0..16 {
                 let c = match self.get(row, col) {
@@ -164,13 +164,17 @@ impl fmt::Display for HexPuzzle {
                     value => format!("{value:x}"),
                 };
                 if col.rem_euclid(4) == 0 {
-                    write!(f, " |")?;
+                    write!(f, " │")?;
                 }
                 write!(f, " {c}")?;
             }
-            writeln!(f, " |")?;
+            writeln!(f, " │")?;
             if (row + 1).rem_euclid(4) == 0 {
-                writeln!(f, " {}", "-".repeat(41))?
+                if row != 15 {
+                    writeln!(f, " {}", "├─────────┼─────────┼─────────┼─────────┤")?
+                } else {
+                    writeln!(f, " {}", "└─────────┴─────────┴─────────┴─────────┘")?
+                }
             }
         }
         Ok(())
